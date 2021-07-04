@@ -7,12 +7,7 @@ async function go() {
 
   const synth = new Positron(audio);
   const body = document.getElementsByTagName('body')[0];
-  let isDown = false;
   body.addEventListener('keydown', (ev: KeyboardEvent) => {
-    if (isDown) {
-      return;
-    }
-    isDown = true;
     switch (ev.key) {
       case 'a': synth.noteOn(60); break;
       case 'w': synth.noteOn(61); break;
@@ -32,8 +27,24 @@ async function go() {
     }
   });
   body.addEventListener('keyup', (ev: KeyboardEvent) => {
-    isDown = false;
-    synth.noteOff();
+    switch (ev.key) {
+      case 'a': synth.noteOff(60); break;
+      case 'w': synth.noteOff(61); break;
+      case 's': synth.noteOff(62); break;
+      case 'e': synth.noteOff(63); break;
+      case 'd': synth.noteOff(64); break;
+      case 'f': synth.noteOff(65); break;
+      case 't': synth.noteOff(66); break;
+      case 'g': synth.noteOff(67); break;
+      case 'y': synth.noteOff(68); break;
+      case 'h': synth.noteOff(69); break;
+      case 'u': synth.noteOff(70); break;
+      case 'j': synth.noteOff(71); break;
+      case 'k': synth.noteOff(72); break;
+      case 'o': synth.noteOff(73); break;
+      case 'l': synth.noteOff(74); break;
+    }
+
   });
 
   const ta = document.createElement('textarea');

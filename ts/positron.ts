@@ -29,23 +29,34 @@ export class Positron {
     this.audioCtx = audio.audioCtx;
   }
 
+  private lastNote: number = 0;
   public noteOn(note: number) {
+    if (this.lastNote == note) {
+      return;
+    }
     const now = this.audioCtx.currentTime;
     this.osc.frequency.setValueAtTime(Audio.HzFromNote(note), 0);
-    this.filt.frequency.setValueAtTime(
-      Audio.HzFromNote(note + (this.c.filterOffset * 12)), 0);
+    if (this.lastNote === 0) {
+      this.filt.frequency.setValueAtTime(
+        Audio.HzFromNote(note + (this.c.filterOffset * 12)), 0);
 
-    this.vca.gain.cancelScheduledValues(0);
-    this.vca.gain.setValueAtTime(0, now);
-    this.vca.gain.linearRampToValueAtTime(0.5, now + this.c.attack);
-    this.vca.gain.linearRampToValueAtTime(
-      0.5 * this.c.sustain, now + this.c.attack + this.c.decay);
+      this.vca.gain.cancelScheduledValues(0);
+      this.vca.gain.linearRampToValueAtTime(0,
+        now + Math.min(this.c.attack, 0.001));
+      this.vca.gain.linearRampToValueAtTime(0.5, now + this.c.attack);
+      this.vca.gain.linearRampToValueAtTime(
+        0.5 * this.c.sustain, now + this.c.attack + this.c.decay);
+    }
+    this.lastNote = note;
   };
 
-  public noteOff() {
-    const now = this.audioCtx.currentTime;
-    this.vca.gain.cancelScheduledValues(0);
-    this.vca.gain.linearRampToValueAtTime(0, now + this.c.release);
+  public noteOff(note: number) {
+    if (note === this.lastNote) {
+      this.lastNote = 0;
+      const now = this.audioCtx.currentTime;
+      this.vca.gain.cancelScheduledValues(0);
+      this.vca.gain.linearRampToValueAtTime(0, now + this.c.release);
+    }
   }
 
   public getConfig(): string {

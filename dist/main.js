@@ -72,12 +72,7 @@ function go() {
         const audio = yield audio_1.Audio.make();
         const synth = new positron_1.Positron(audio);
         const body = document.getElementsByTagName('body')[0];
-        let isDown = false;
         body.addEventListener('keydown', (ev) => {
-            if (isDown) {
-                return;
-            }
-            isDown = true;
             switch (ev.key) {
                 case 'a':
                     synth.noteOn(60);
@@ -127,8 +122,53 @@ function go() {
             }
         });
         body.addEventListener('keyup', (ev) => {
-            isDown = false;
-            synth.noteOff();
+            switch (ev.key) {
+                case 'a':
+                    synth.noteOff(60);
+                    break;
+                case 'w':
+                    synth.noteOff(61);
+                    break;
+                case 's':
+                    synth.noteOff(62);
+                    break;
+                case 'e':
+                    synth.noteOff(63);
+                    break;
+                case 'd':
+                    synth.noteOff(64);
+                    break;
+                case 'f':
+                    synth.noteOff(65);
+                    break;
+                case 't':
+                    synth.noteOff(66);
+                    break;
+                case 'g':
+                    synth.noteOff(67);
+                    break;
+                case 'y':
+                    synth.noteOff(68);
+                    break;
+                case 'h':
+                    synth.noteOff(69);
+                    break;
+                case 'u':
+                    synth.noteOff(70);
+                    break;
+                case 'j':
+                    synth.noteOff(71);
+                    break;
+                case 'k':
+                    synth.noteOff(72);
+                    break;
+                case 'o':
+                    synth.noteOff(73);
+                    break;
+                case 'l':
+                    synth.noteOff(74);
+                    break;
+            }
         });
         const ta = document.createElement('textarea');
         ta.value = synth.getConfig();
@@ -160,6 +200,7 @@ const positronConfig_1 = __webpack_require__(462);
 class Positron {
     constructor(audio) {
         this.c = new positronConfig_1.PositronConfig();
+        this.lastNote = 0;
         this.osc = audio.audioCtx.createOscillator();
         this.osc.type = 'square';
         this.osc.frequency.setValueAtTime(30, 0);
@@ -175,19 +216,28 @@ class Positron {
         this.audioCtx = audio.audioCtx;
     }
     noteOn(note) {
+        if (this.lastNote == note) {
+            return;
+        }
         const now = this.audioCtx.currentTime;
         this.osc.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
-        this.filt.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note + (this.c.filterOffset * 12)), 0);
-        this.vca.gain.cancelScheduledValues(0);
-        this.vca.gain.setValueAtTime(0, now);
-        this.vca.gain.linearRampToValueAtTime(0.5, now + this.c.attack);
-        this.vca.gain.linearRampToValueAtTime(0.5 * this.c.sustain, now + this.c.attack + this.c.decay);
+        if (this.lastNote === 0) {
+            this.filt.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note + (this.c.filterOffset * 12)), 0);
+            this.vca.gain.cancelScheduledValues(0);
+            this.vca.gain.linearRampToValueAtTime(0, now + Math.min(this.c.attack, 0.001));
+            this.vca.gain.linearRampToValueAtTime(0.5, now + this.c.attack);
+            this.vca.gain.linearRampToValueAtTime(0.5 * this.c.sustain, now + this.c.attack + this.c.decay);
+        }
+        this.lastNote = note;
     }
     ;
-    noteOff() {
-        const now = this.audioCtx.currentTime;
-        this.vca.gain.cancelScheduledValues(0);
-        this.vca.gain.linearRampToValueAtTime(0, now + this.c.release);
+    noteOff(note) {
+        if (note === this.lastNote) {
+            this.lastNote = 0;
+            const now = this.audioCtx.currentTime;
+            this.vca.gain.cancelScheduledValues(0);
+            this.vca.gain.linearRampToValueAtTime(0, now + this.c.release);
+        }
     }
     getConfig() {
         return JSON.stringify(this.c);
