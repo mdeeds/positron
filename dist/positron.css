@@ -1,17 +1,4 @@
-canvas {
-  background-color: transparent;
-}
-
-.loopContainer {
-  display: inline-block;
-  margin: 5px;
-  background-color: lightgreen;
-}
-
-.loopContainer:focus {
-  box-shadow: black 0px 0px 6px;
-}
-
-.muted {
-  background-color: lightgray;
+textarea {
+  width: 500px;
+  height: 200px;
 }

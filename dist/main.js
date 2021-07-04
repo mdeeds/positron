@@ -72,7 +72,12 @@ function go() {
         const audio = yield audio_1.Audio.make();
         const synth = new positron_1.Positron(audio);
         const body = document.getElementsByTagName('body')[0];
+        let isDown = false;
         body.addEventListener('keydown', (ev) => {
+            if (isDown) {
+                return;
+            }
+            isDown = true;
             switch (ev.key) {
                 case 'a':
                     synth.noteOn(60);
@@ -122,8 +127,21 @@ function go() {
             }
         });
         body.addEventListener('keyup', (ev) => {
+            isDown = false;
             synth.noteOff();
         });
+        const ta = document.createElement('textarea');
+        ta.value = synth.getConfig();
+        ta.addEventListener('change', (ev) => {
+            try {
+                const dict = JSON.parse(ta.value);
+                synth.setConfig(ta.value);
+            }
+            catch (e) {
+                // Ignore.  No biggie.
+            }
+        });
+        body.appendChild(ta);
     });
 }
 go();
@@ -138,12 +156,10 @@ go();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Positron = void 0;
 const audio_1 = __webpack_require__(458);
+const positronConfig_1 = __webpack_require__(462);
 class Positron {
     constructor(audio) {
-        this.attack = 0.1;
-        this.decay = 0.1;
-        this.sustain = 0.8;
-        this.release = 0.5;
+        this.c = new positronConfig_1.PositronConfig();
         this.osc = audio.audioCtx.createOscillator();
         this.osc.type = 'square';
         this.osc.frequency.setValueAtTime(30, 0);
@@ -162,18 +178,45 @@ class Positron {
         const now = this.audioCtx.currentTime;
         this.osc.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
         this.filt.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
-        this.vca.gain.setValueAtTime(now, 0);
-        this.vca.gain.linearRampToValueAtTime(1.0, now + this.attack);
-        this.vca.gain.linearRampToValueAtTime(this.sustain, now + this.attack + this.decay);
+        this.vca.gain.cancelScheduledValues(0);
+        this.vca.gain.setValueAtTime(0, now);
+        this.vca.gain.linearRampToValueAtTime(0.5, now + this.c.attack);
+        this.vca.gain.linearRampToValueAtTime(0.5 * this.c.sustain, now + this.c.attack + this.c.decay);
     }
     ;
     noteOff() {
         const now = this.audioCtx.currentTime;
-        this.vca.gain.linearRampToValueAtTime(0, now + this.release);
+        this.vca.gain.cancelScheduledValues(0);
+        this.vca.gain.linearRampToValueAtTime(0, now + this.c.release);
+    }
+    getConfig() {
+        return JSON.stringify(this.c);
+    }
+    setConfig(cfg) {
+        Object.assign(this.c, JSON.parse(cfg));
     }
 }
 exports.Positron = Positron;
 //# sourceMappingURL=positron.js.map
+
+/***/ }),
+
+/***/ 462:
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.PositronConfig = void 0;
+class PositronConfig {
+    constructor() {
+        this.attack = 0.1;
+        this.decay = 0.1;
+        this.sustain = 0.8;
+        this.release = 0.5;
+    }
+}
+exports.PositronConfig = PositronConfig;
+//# sourceMappingURL=positronConfig.js.map
 
 /***/ })
 

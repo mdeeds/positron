@@ -33,14 +33,25 @@ export class Positron {
     const now = this.audioCtx.currentTime;
     this.osc.frequency.setValueAtTime(Audio.HzFromNote(note), 0);
     this.filt.frequency.setValueAtTime(Audio.HzFromNote(note), 0);
-    this.vca.gain.setValueAtTime(now, 0);
-    this.vca.gain.linearRampToValueAtTime(1.0, now + this.c.attack);
+
+    this.vca.gain.cancelScheduledValues(0);
+    this.vca.gain.setValueAtTime(0, now);
+    this.vca.gain.linearRampToValueAtTime(0.5, now + this.c.attack);
     this.vca.gain.linearRampToValueAtTime(
-      this.c.sustain, now + this.c.attack + this.c.decay);
+      0.5 * this.c.sustain, now + this.c.attack + this.c.decay);
   };
 
   public noteOff() {
     const now = this.audioCtx.currentTime;
+    this.vca.gain.cancelScheduledValues(0);
     this.vca.gain.linearRampToValueAtTime(0, now + this.c.release);
+  }
+
+  public getConfig(): string {
+    return JSON.stringify(this.c);
+  }
+
+  public setConfig(cfg: string) {
+    Object.assign(this.c, JSON.parse(cfg));
   }
 }

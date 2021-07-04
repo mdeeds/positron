@@ -7,7 +7,12 @@ async function go() {
 
   const synth = new Positron(audio);
   const body = document.getElementsByTagName('body')[0];
+  let isDown = false;
   body.addEventListener('keydown', (ev: KeyboardEvent) => {
+    if (isDown) {
+      return;
+    }
+    isDown = true;
     switch (ev.key) {
       case 'a': synth.noteOn(60); break;
       case 'w': synth.noteOn(61); break;
@@ -27,8 +32,21 @@ async function go() {
     }
   });
   body.addEventListener('keyup', (ev: KeyboardEvent) => {
+    isDown = false;
     synth.noteOff();
   });
+
+  const ta = document.createElement('textarea');
+  ta.value = synth.getConfig();
+  ta.addEventListener('change', (ev) => {
+    try {
+      const dict = JSON.parse(ta.value);
+      synth.setConfig(ta.value);
+    } catch (e) {
+      // Ignore.  No biggie.
+    }
+  });
+  body.appendChild(ta);
 
 }
 
