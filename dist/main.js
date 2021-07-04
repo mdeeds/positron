@@ -66,94 +66,114 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 const audio_1 = __webpack_require__(458);
+const positron_1 = __webpack_require__(544);
 function go() {
     return __awaiter(this, void 0, void 0, function* () {
         const audio = yield audio_1.Audio.make();
-        const osc = audio.audioCtx.createOscillator();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(30, 0);
-        const filt = audio.audioCtx.createBiquadFilter();
-        filt.type = 'lowpass';
-        filt.frequency.setValueAtTime(30, 0);
-        const vca = audio.audioCtx.createGain();
-        vca.gain.setValueAtTime(0, 0);
-        osc.start();
-        osc.connect(filt).connect(vca).connect(audio.audioCtx.destination);
-        let attack = 0.1;
-        let decay = 0.1;
-        let sustain = 0.8;
-        let release = 0.5;
-        function noteOn(note) {
-            const now = audio.audioCtx.currentTime;
-            osc.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
-            filt.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
-            vca.gain.setValueAtTime(now, 0);
-            vca.gain.linearRampToValueAtTime(1.0, now + attack);
-            vca.gain.linearRampToValueAtTime(sustain, now + attack + decay);
-        }
-        ;
-        function noteOff() {
-            const now = audio.audioCtx.currentTime;
-            vca.gain.linearRampToValueAtTime(0, now + release);
-        }
-        ;
+        const synth = new positron_1.Positron(audio);
         const body = document.getElementsByTagName('body')[0];
         body.addEventListener('keydown', (ev) => {
             switch (ev.key) {
                 case 'a':
-                    noteOn(60);
+                    synth.noteOn(60);
                     break;
                 case 'w':
-                    noteOn(61);
+                    synth.noteOn(61);
                     break;
                 case 's':
-                    noteOn(62);
+                    synth.noteOn(62);
                     break;
                 case 'e':
-                    noteOn(63);
+                    synth.noteOn(63);
                     break;
                 case 'd':
-                    noteOn(64);
+                    synth.noteOn(64);
                     break;
                 case 'f':
-                    noteOn(65);
+                    synth.noteOn(65);
                     break;
                 case 't':
-                    noteOn(66);
+                    synth.noteOn(66);
                     break;
                 case 'g':
-                    noteOn(67);
+                    synth.noteOn(67);
                     break;
                 case 'y':
-                    noteOn(68);
+                    synth.noteOn(68);
                     break;
                 case 'h':
-                    noteOn(69);
+                    synth.noteOn(69);
                     break;
                 case 'u':
-                    noteOn(70);
+                    synth.noteOn(70);
                     break;
                 case 'j':
-                    noteOn(71);
+                    synth.noteOn(71);
                     break;
                 case 'k':
-                    noteOn(72);
+                    synth.noteOn(72);
                     break;
                 case 'o':
-                    noteOn(73);
+                    synth.noteOn(73);
                     break;
                 case 'l':
-                    noteOn(74);
+                    synth.noteOn(74);
                     break;
             }
         });
         body.addEventListener('keyup', (ev) => {
-            noteOff();
+            synth.noteOff();
         });
     });
 }
 go();
 //# sourceMappingURL=index.js.map
+
+/***/ }),
+
+/***/ 544:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Positron = void 0;
+const audio_1 = __webpack_require__(458);
+class Positron {
+    constructor(audio) {
+        this.attack = 0.1;
+        this.decay = 0.1;
+        this.sustain = 0.8;
+        this.release = 0.5;
+        this.osc = audio.audioCtx.createOscillator();
+        this.osc.type = 'square';
+        this.osc.frequency.setValueAtTime(30, 0);
+        this.filt = audio.audioCtx.createBiquadFilter();
+        this.filt.type = 'lowpass';
+        this.filt.frequency.setValueAtTime(30, 0);
+        this.vca = audio.audioCtx.createGain();
+        this.vca.gain.setValueAtTime(0, 0);
+        this.osc.start();
+        this.osc.connect(this.filt);
+        this.filt.connect(this.vca);
+        this.vca.connect(audio.audioCtx.destination);
+        this.audioCtx = audio.audioCtx;
+    }
+    noteOn(note) {
+        const now = this.audioCtx.currentTime;
+        this.osc.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
+        this.filt.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
+        this.vca.gain.setValueAtTime(now, 0);
+        this.vca.gain.linearRampToValueAtTime(1.0, now + this.attack);
+        this.vca.gain.linearRampToValueAtTime(this.sustain, now + this.attack + this.decay);
+    }
+    ;
+    noteOff() {
+        const now = this.audioCtx.currentTime;
+        this.vca.gain.linearRampToValueAtTime(0, now + this.release);
+    }
+}
+exports.Positron = Positron;
+//# sourceMappingURL=positron.js.map
 
 /***/ })
 
