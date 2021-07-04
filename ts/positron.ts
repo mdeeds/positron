@@ -1,5 +1,6 @@
 import { Adsr } from "./adsr";
 import { Audio } from "./audio";
+import { NoiseNode } from "./noiseNode";
 import { PositronConfig } from "./positronConfig";
 
 export class Positron {
@@ -8,6 +9,7 @@ export class Positron {
   filt: BiquadFilterNode;
   vca: GainNode;
   audioCtx: AudioContext;
+  noiseGain: GainNode;
 
   constructor(audio: Audio) {
 
@@ -17,6 +19,10 @@ export class Positron {
     this.osc = audio.audioCtx.createOscillator();
     this.osc.type = 'square';
     this.osc.frequency.setValueAtTime(30, 0);
+
+    const noise = NoiseNode.make(audio.audioCtx);
+    this.noiseGain = audio.audioCtx.createGain();
+    this.noiseGain.gain.setValueAtTime(this.c.noiseGain, 0);
 
     this.filt = audio.audioCtx.createBiquadFilter();
     this.filt.type = 'lowpass';
@@ -29,8 +35,11 @@ export class Positron {
     master.gain.setValueAtTime(0.6, 0);
 
     this.osc.start();
+    noise.start();
 
     this.osc.connect(this.filt);
+    noise.connect(this.noiseGain);
+    this.noiseGain.connect(this.filt);
     this.filt.connect(this.vca);
     this.vca.connect(master);
     master.connect(audio.audioCtx.destination);
@@ -45,6 +54,7 @@ export class Positron {
     }
     const now = this.audioCtx.currentTime;
     this.osc.frequency.setValueAtTime(Audio.HzFromNote(note), 0);
+    this.noiseGain.gain.setValueAtTime(this.c.noiseGain, 0);
     this.c.filtEnv.bias = note;
     if (this.lastNote === 0) {
       Adsr.gateOn(this.c.filtEnv, this.filt.frequency, now);

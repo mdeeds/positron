@@ -230,6 +230,31 @@ go();
 
 /***/ }),
 
+/***/ 856:
+/***/ ((__unused_webpack_module, exports) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.NoiseNode = void 0;
+class NoiseNode {
+    static make(audioCtx) {
+        const bufferSize = audioCtx.sampleRate * 3.0;
+        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        let data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+        let noise = audioCtx.createBufferSource();
+        noise.buffer = buffer;
+        noise.loop = true;
+        return noise;
+    }
+}
+exports.NoiseNode = NoiseNode;
+//# sourceMappingURL=noiseNode.js.map
+
+/***/ }),
+
 /***/ 544:
 /***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
@@ -238,6 +263,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Positron = void 0;
 const adsr_1 = __webpack_require__(647);
 const audio_1 = __webpack_require__(458);
+const noiseNode_1 = __webpack_require__(856);
 const positronConfig_1 = __webpack_require__(462);
 class Positron {
     constructor(audio) {
@@ -248,6 +274,9 @@ class Positron {
         this.osc = audio.audioCtx.createOscillator();
         this.osc.type = 'square';
         this.osc.frequency.setValueAtTime(30, 0);
+        const noise = noiseNode_1.NoiseNode.make(audio.audioCtx);
+        this.noiseGain = audio.audioCtx.createGain();
+        this.noiseGain.gain.setValueAtTime(this.c.noiseGain, 0);
         this.filt = audio.audioCtx.createBiquadFilter();
         this.filt.type = 'lowpass';
         this.filt.frequency.setValueAtTime(30, 0);
@@ -256,7 +285,10 @@ class Positron {
         const master = audio.audioCtx.createGain();
         master.gain.setValueAtTime(0.6, 0);
         this.osc.start();
+        noise.start();
         this.osc.connect(this.filt);
+        noise.connect(this.noiseGain);
+        this.noiseGain.connect(this.filt);
         this.filt.connect(this.vca);
         this.vca.connect(master);
         master.connect(audio.audioCtx.destination);
@@ -268,6 +300,7 @@ class Positron {
         }
         const now = this.audioCtx.currentTime;
         this.osc.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
+        this.noiseGain.gain.setValueAtTime(this.c.noiseGain, 0);
         this.c.filtEnv.bias = note;
         if (this.lastNote === 0) {
             adsr_1.Adsr.gateOn(this.c.filtEnv, this.filt.frequency, now);
@@ -309,6 +342,7 @@ class PositronConfig {
         this.gainEnv = new adsr_1.Adsr();
         this.filtEnv = new adsr_1.Adsr();
         this.filterOffset = 0.0;
+        this.noiseGain = 0.0;
     }
 }
 exports.PositronConfig = PositronConfig;
