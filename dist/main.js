@@ -177,7 +177,7 @@ class Positron {
     noteOn(note) {
         const now = this.audioCtx.currentTime;
         this.osc.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
-        this.filt.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
+        this.filt.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note + (this.c.filterOffset * 12)), 0);
         this.vca.gain.cancelScheduledValues(0);
         this.vca.gain.setValueAtTime(0, now);
         this.vca.gain.linearRampToValueAtTime(0.5, now + this.c.attack);
@@ -213,6 +213,7 @@ class PositronConfig {
         this.decay = 0.1;
         this.sustain = 0.8;
         this.release = 0.5;
+        this.filterOffset = 0.0;
     }
 }
 exports.PositronConfig = PositronConfig;

@@ -32,7 +32,8 @@ export class Positron {
   public noteOn(note: number) {
     const now = this.audioCtx.currentTime;
     this.osc.frequency.setValueAtTime(Audio.HzFromNote(note), 0);
-    this.filt.frequency.setValueAtTime(Audio.HzFromNote(note), 0);
+    this.filt.frequency.setValueAtTime(
+      Audio.HzFromNote(note + (this.c.filterOffset * 12)), 0);
 
     this.vca.gain.cancelScheduledValues(0);
     this.vca.gain.setValueAtTime(0, now);

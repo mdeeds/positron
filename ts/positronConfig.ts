@@ -3,4 +3,6 @@ export class PositronConfig {
   decay: number = 0.1;
   sustain: number = 0.8;
   release: number = 0.5;
+
+  filterOffset: number = 0.0;
 }
