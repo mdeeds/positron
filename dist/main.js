@@ -2,6 +2,47 @@
 /******/ 	"use strict";
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 647:
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
+
+
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Adsr = void 0;
+const audio_1 = __webpack_require__(458);
+class Adsr {
+    constructor() {
+        this.mode = 'absolute';
+        this.attack = 0.1;
+        this.decay = 0.1;
+        this.sustain = 0.8;
+        this.release = 0.5;
+        this.intensity = 1.0;
+        this.bias = 0.0;
+    }
+    static identity(x) {
+        return x;
+    }
+    static hz(x) {
+        return audio_1.Audio.HzFromNote(x);
+    }
+    static gateOn(self, param, now) {
+        const f = self.mode === 'absolute' ? Adsr.identity : Adsr.hz;
+        param.cancelScheduledValues(0);
+        param.linearRampToValueAtTime(f(self.bias), now + Math.min(self.attack, 0.001));
+        param.linearRampToValueAtTime(f(self.bias + self.intensity), now + self.attack);
+        param.linearRampToValueAtTime(f(self.bias + self.intensity * self.sustain), now + self.attack + self.decay);
+    }
+    static gateOff(self, param, now) {
+        const f = self.mode === 'absolute' ? Adsr.identity : Adsr.hz;
+        param.cancelScheduledValues(0);
+        param.linearRampToValueAtTime(f(self.bias), now + self.release);
+    }
+}
+exports.Adsr = Adsr;
+//# sourceMappingURL=adsr.js.map
+
+/***/ }),
+
 /***/ 458:
 /***/ (function(__unused_webpack_module, exports) {
 
@@ -195,12 +236,15 @@ go();
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.Positron = void 0;
+const adsr_1 = __webpack_require__(647);
 const audio_1 = __webpack_require__(458);
 const positronConfig_1 = __webpack_require__(462);
 class Positron {
     constructor(audio) {
         this.c = new positronConfig_1.PositronConfig();
         this.lastNote = 0;
+        this.c.filtEnv.mode = 'note';
+        this.c.filtEnv.intensity = 12;
         this.osc = audio.audioCtx.createOscillator();
         this.osc.type = 'square';
         this.osc.frequency.setValueAtTime(30, 0);
@@ -209,10 +253,13 @@ class Positron {
         this.filt.frequency.setValueAtTime(30, 0);
         this.vca = audio.audioCtx.createGain();
         this.vca.gain.setValueAtTime(0, 0);
+        const master = audio.audioCtx.createGain();
+        master.gain.setValueAtTime(0.6, 0);
         this.osc.start();
         this.osc.connect(this.filt);
         this.filt.connect(this.vca);
-        this.vca.connect(audio.audioCtx.destination);
+        this.vca.connect(master);
+        master.connect(audio.audioCtx.destination);
         this.audioCtx = audio.audioCtx;
     }
     noteOn(note) {
@@ -221,12 +268,10 @@ class Positron {
         }
         const now = this.audioCtx.currentTime;
         this.osc.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note), 0);
+        this.c.filtEnv.bias = note;
         if (this.lastNote === 0) {
-            this.filt.frequency.setValueAtTime(audio_1.Audio.HzFromNote(note + (this.c.filterOffset * 12)), 0);
-            this.vca.gain.cancelScheduledValues(0);
-            this.vca.gain.linearRampToValueAtTime(0, now + Math.min(this.c.attack, 0.001));
-            this.vca.gain.linearRampToValueAtTime(0.5, now + this.c.attack);
-            this.vca.gain.linearRampToValueAtTime(0.5 * this.c.sustain, now + this.c.attack + this.c.decay);
+            adsr_1.Adsr.gateOn(this.c.filtEnv, this.filt.frequency, now);
+            adsr_1.Adsr.gateOn(this.c.gainEnv, this.vca.gain, now);
         }
         this.lastNote = note;
     }
@@ -235,14 +280,15 @@ class Positron {
         if (note === this.lastNote) {
             this.lastNote = 0;
             const now = this.audioCtx.currentTime;
-            this.vca.gain.cancelScheduledValues(0);
-            this.vca.gain.linearRampToValueAtTime(0, now + this.c.release);
+            adsr_1.Adsr.gateOff(this.c.filtEnv, this.filt.frequency, now);
+            adsr_1.Adsr.gateOff(this.c.gainEnv, this.vca.gain, now);
         }
     }
     getConfig() {
-        return JSON.stringify(this.c);
+        return JSON.stringify(this.c, null, 2);
     }
     setConfig(cfg) {
+        const dict = JSON.parse(cfg);
         Object.assign(this.c, JSON.parse(cfg));
     }
 }
@@ -252,17 +298,16 @@ exports.Positron = Positron;
 /***/ }),
 
 /***/ 462:
-/***/ ((__unused_webpack_module, exports) => {
+/***/ ((__unused_webpack_module, exports, __webpack_require__) => {
 
 
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.PositronConfig = void 0;
+const adsr_1 = __webpack_require__(647);
 class PositronConfig {
     constructor() {
-        this.attack = 0.1;
-        this.decay = 0.1;
-        this.sustain = 0.8;
-        this.release = 0.5;
+        this.gainEnv = new adsr_1.Adsr();
+        this.filtEnv = new adsr_1.Adsr();
         this.filterOffset = 0.0;
     }
 }
