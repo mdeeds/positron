@@ -1,10 +1,8 @@
 import { Audio } from "./audio";
+import { PositronConfig } from "./positronConfig";
 
 export class Positron {
-  attack: number = 0.1;
-  decay: number = 0.1;
-  sustain: number = 0.8;
-  release: number = 0.5;
+  c: PositronConfig = new PositronConfig();
   osc: OscillatorNode;
   filt: BiquadFilterNode;
   vca: GainNode;
@@ -36,13 +34,13 @@ export class Positron {
     this.osc.frequency.setValueAtTime(Audio.HzFromNote(note), 0);
     this.filt.frequency.setValueAtTime(Audio.HzFromNote(note), 0);
     this.vca.gain.setValueAtTime(now, 0);
-    this.vca.gain.linearRampToValueAtTime(1.0, now + this.attack);
+    this.vca.gain.linearRampToValueAtTime(1.0, now + this.c.attack);
     this.vca.gain.linearRampToValueAtTime(
-      this.sustain, now + this.attack + this.decay);
+      this.c.sustain, now + this.c.attack + this.c.decay);
   };
 
   public noteOff() {
     const now = this.audioCtx.currentTime;
-    this.vca.gain.linearRampToValueAtTime(0, now + this.release);
+    this.vca.gain.linearRampToValueAtTime(0, now + this.c.release);
   }
 }
